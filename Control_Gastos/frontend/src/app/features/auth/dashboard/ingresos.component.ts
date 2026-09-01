@@ -2,6 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { finalize } from 'rxjs';
 import { AuthService } from '../../../core/services/auth.service';
 import {
   Income, IncomeService
@@ -1001,27 +1002,19 @@ export class IngresosComponent implements OnInit {
       this.mostrarMensaje('Ingresa un monto válido', true);
       return;
     }
-    if (!this.nuevo.fecha) {
-      this.mostrarMensaje('Selecciona una fecha', true);
-      return;
-    }
     this.cargando = true;
     this.incomeService.create({
       descripcion: this.nuevo.descripcion,
       monto: this.nuevo.monto,
       tipo: this.nuevo.tipo,
-      fecha: this.nuevo.fecha
-    }).subscribe({
+      fecha: this.nuevo.fecha || null
+    }).pipe(finalize(() => { this.cargando = false; })).subscribe({
       next: () => {
         this.mostrarMensaje('Ingreso registrado correctamente');
         this.nuevo = { descripcion: '', monto: null, tipo: 'Fijo', fecha: '' };
         this.cargarIngresos();
-        this.cargando = false;
       },
-      error: (err) => {
-        this.mostrarMensaje(this.extraerError(err), true);
-        this.cargando = false;
-      }
+      error: (err) => this.mostrarMensaje(this.extraerError(err), true)
     });
   }
 
@@ -1074,17 +1067,13 @@ export class IngresosComponent implements OnInit {
     this.savingService.create({
       monto: this.nuevoAhorro.monto,
       descripcion: this.nuevoAhorro.descripcion || undefined
-    }).subscribe({
+    }).pipe(finalize(() => { this.cargando = false; })).subscribe({
       next: () => {
         this.mostrarMensaje('Ahorro guardado correctamente');
         this.nuevoAhorro = { monto: null, descripcion: '' };
         this.cargarAhorros();
-        this.cargando = false;
       },
-      error: (err) => {
-        this.mostrarMensaje(this.extraerError(err), true);
-        this.cargando = false;
-      }
+      error: (err) => this.mostrarMensaje(this.extraerError(err), true)
     });
   }
 
