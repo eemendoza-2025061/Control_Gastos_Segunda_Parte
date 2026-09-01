@@ -134,7 +134,7 @@ import { Saving, SavingService } from '../../../core/services/saving.service';
           <div class="card form-card">
             <h3 class="section-title">Registrar Ingreso</h3>
 
-            <form (ngSubmit)="agregarIngreso()" class="ingreso-form">
+            <form (ngSubmit)="agregarIngreso()" class="ingreso-form" novalidate>
               <div class="form-group">
                 <label for="descripcion">Descripción</label>
                 <input id="descripcion" type="text" placeholder="Ej: Salario mensual"
@@ -215,7 +215,7 @@ import { Saving, SavingService } from '../../../core/services/saving.service';
           <div class="card form-card">
             <h3 class="section-title">Ingresar un Ahorro</h3>
 
-            <form (ngSubmit)="agregarAhorro()" class="saving-form">
+            <form (ngSubmit)="agregarAhorro()" class="saving-form" novalidate>
               <div class="form-group">
                 <label for="ahorroMonto">Monto a ahorrar (Q)</label>
                 <input id="ahorroMonto" type="number" step="0.01" min="0" placeholder="0.00"
@@ -993,13 +993,24 @@ export class IngresosComponent implements OnInit {
   }
 
   agregarIngreso(): void {
-    if (!this.nuevo.descripcion || this.nuevo.monto == null || this.nuevo.monto < 0) return;
+    if (!this.nuevo.descripcion?.trim()) {
+      this.mostrarMensaje('Ingresa una descripción', true);
+      return;
+    }
+    if (this.nuevo.monto == null || this.nuevo.monto < 0 || isNaN(this.nuevo.monto)) {
+      this.mostrarMensaje('Ingresa un monto válido', true);
+      return;
+    }
+    if (!this.nuevo.fecha) {
+      this.mostrarMensaje('Selecciona una fecha', true);
+      return;
+    }
     this.cargando = true;
     this.incomeService.create({
       descripcion: this.nuevo.descripcion,
       monto: this.nuevo.monto,
       tipo: this.nuevo.tipo,
-      fecha: this.nuevo.fecha || null
+      fecha: this.nuevo.fecha
     }).subscribe({
       next: () => {
         this.mostrarMensaje('Ingreso registrado correctamente');
@@ -1055,7 +1066,10 @@ export class IngresosComponent implements OnInit {
   }
 
   agregarAhorro(): void {
-    if (this.nuevoAhorro.monto == null || this.nuevoAhorro.monto < 0) return;
+    if (this.nuevoAhorro.monto == null || this.nuevoAhorro.monto < 0 || isNaN(this.nuevoAhorro.monto)) {
+      this.mostrarMensaje('Ingresa un monto de ahorro válido', true);
+      return;
+    }
     this.cargando = true;
     this.savingService.create({
       monto: this.nuevoAhorro.monto,
@@ -1085,7 +1099,10 @@ export class IngresosComponent implements OnInit {
   }
 
   guardarMeta(): void {
-    if (this.metaAhorro == null || this.metaAhorro < 0) return;
+    if (this.metaAhorro == null || this.metaAhorro < 0 || isNaN(this.metaAhorro)) {
+      this.mostrarMensaje('Ingresa un valor para la meta', true);
+      return;
+    }
     this.cargando = true;
     this.savingService.setGoal(this.metaAhorro).subscribe({
       next: () => {
