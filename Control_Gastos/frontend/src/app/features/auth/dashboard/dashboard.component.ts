@@ -1,6 +1,9 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { IncomeService } from '../../../core/services/income.service';
+import { SavingService } from '../../../core/services/saving.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -21,7 +24,7 @@ import { AuthService } from '../../../core/services/auth.service';
             <li class="active"><span class="menu-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </span> Dashboard</li>
-            <li><span class="menu-icon">
+            <li (click)="goToIngresos()"><span class="menu-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </span> Ingresos</li>
             <li><span class="menu-icon">
@@ -64,12 +67,18 @@ import { AuthService } from '../../../core/services/auth.service';
           </div>
 
           <div class="topbar-actions">
+            <div class="search-bar">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" placeholder="Buscar transacción...">
+            </div>
             <button class="icon-btn">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             </button>
-            <div class="user-chip">
-              <span class="chip-name">{{ userName }}</span>
-            </div>
+            <span class="admin-badge">Admin</span>
+            <button class="logout-btn-top" (click)="logout()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Salir
+            </button>
           </div>
         </header>
 
@@ -82,8 +91,8 @@ import { AuthService } from '../../../core/services/auth.service';
               </div>
               <h3>Total de ingresos</h3>
             </div>
-            <h2>Q0.00</h2>
-            <p class="trend"><span>0%</span> from last week</p>
+            <h2>Q{{ totalIngresos.toFixed(2) }}</h2>
+            <p class="trend"><span>{{ eficiencia.toFixed(0) }}%</span> eficiencia económica</p>
           </div>
 
           <div class="card stat-card">
@@ -93,7 +102,7 @@ import { AuthService } from '../../../core/services/auth.service';
               </div>
               <h3>Total de egresos</h3>
             </div>
-            <h2>Q0.00</h2>
+            <h2>Q{{ totalEgresos.toFixed(2) }}</h2>
             <p class="trend"><span>0%</span> from last week</p>
           </div>
 
@@ -104,7 +113,7 @@ import { AuthService } from '../../../core/services/auth.service';
               </div>
               <h3>Total deuda</h3>
             </div>
-            <h2>Q0.00</h2>
+            <h2>Q{{ totalDeuda.toFixed(2) }}</h2>
             <p class="trend"><span>0%</span> from last week</p>
           </div>
         </section>
@@ -130,11 +139,11 @@ import { AuthService } from '../../../core/services/auth.service';
                 <svg viewBox="0 0 120 120" class="donut-svg">
                   <circle cx="60" cy="60" r="50" fill="none" stroke="#2a2c31" stroke-width="10"/>
                   <circle cx="60" cy="60" r="50" fill="none" stroke="#8b5cf6" stroke-width="10"
-                    stroke-dasharray="226.2" stroke-dashoffset="226.2"
+                    stroke-dasharray="226.2" [attr.stroke-dashoffset]="donutOffset"
                     stroke-linecap="round" transform="rotate(-90 60 60)"/>
                 </svg>
                 <div class="donut-text">
-                  <span class="donut-value">0%</span>
+                  <span class="donut-value">{{ eficiencia.toFixed(0) }}%</span>
                 </div>
               </div>
               <span class="efficiency-label">eficiencia</span>
@@ -151,12 +160,12 @@ import { AuthService } from '../../../core/services/auth.service';
           <div class="card savings-card">
             <div class="savings-header">
               <h3>Meta de ahorros</h3>
-              <span class="savings-percent">0%</span>
+              <span class="savings-percent">{{ savingProgreso }}%</span>
             </div>
             <div class="progress-bar">
-              <div class="progress-fill" style="width: 0%"></div>
+              <div class="progress-fill" [style.width.%]="savingProgreso"></div>
             </div>
-            <p class="savings-desc">Q0.00 ahorrados de una meta de Q0.00</p>
+            <p class="savings-desc">Q{{ savingTotal.toFixed(2) }} ahorrados de una meta de Q{{ savingMeta.toFixed(2) }}</p>
           </div>
         </section>
 
@@ -370,26 +379,60 @@ import { AuthService } from '../../../core/services/auth.service';
       justify-content: center;
     }
 
-    .user-chip {
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       background-color: var(--bg-card);
       border: 1px solid var(--border-color);
-      border-radius: 20px;
-      padding: 6px 14px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      line-height: 1.2;
-    }
-
-    .chip-name {
-      font-size: 0.8rem;
-      font-weight: 700;
-      color: var(--text-main);
-    }
-
-    .chip-role {
-      font-size: 0.65rem;
+      border-radius: 10px;
+      padding: 8px 14px;
       color: var(--text-muted);
+      min-width: 220px;
+    }
+
+    .search-bar input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      width: 100%;
+    }
+
+    .search-bar input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .admin-badge {
+      background-color: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .logout-btn-top {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background-color: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .logout-btn-top:hover {
+      background-color: rgba(239, 68, 68, 0.25);
     }
 
     /* SUMMARY CARDS */
@@ -606,8 +649,53 @@ import { AuthService } from '../../../core/services/auth.service';
     }
   `]
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
   authService = inject(AuthService);
+  incomeService = inject(IncomeService);
+  savingService = inject(SavingService);
+  private router = inject(Router);
+
+  totalIngresos = 0;
+  totalEgresos = 0;
+  totalDeuda = 0;
+  savingTotal = 0;
+  savingMeta = 0;
+
+  get eficiencia(): number {
+    if (this.totalIngresos <= 0) return 0;
+    const perdida = this.totalEgresos + this.totalDeuda;
+    const eficiencia = ((this.totalIngresos - perdida) / this.totalIngresos) * 100;
+    return Math.max(0, Math.min(100, eficiencia));
+  }
+
+  get donutOffset(): number {
+    const MAX = 226.2;
+    return MAX - (MAX * this.eficiencia) / 100;
+  }
+
+  get savingProgreso(): number {
+    if (this.savingMeta <= 0) return 0;
+    return Math.min(100, Math.round((this.savingTotal / this.savingMeta) * 100));
+  }
+
+  ngOnInit(): void {
+    this.incomeService.getTotal().subscribe({
+      next: (res) => { this.totalIngresos = res.total; },
+      error: () => {}
+    });
+
+    this.savingService.getSummary().subscribe({
+      next: (res) => {
+        this.savingTotal = res.total;
+        this.savingMeta = res.meta;
+      },
+      error: () => {}
+    });
+  }
+
+  goToIngresos(): void {
+    this.router.navigate(['/ingresos']);
+  }
 
   weekDays = [
     { label: 'Lun', value: 0, color: '#3b3b42' },
