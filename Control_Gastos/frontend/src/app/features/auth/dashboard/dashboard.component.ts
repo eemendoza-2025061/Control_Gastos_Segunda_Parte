@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
@@ -18,10 +19,10 @@ import { AuthService } from '../../../core/services/auth.service';
         <nav class="sidebar-menu">
           <span class="menu-title">MENU</span>
           <ul>
-            <li class="active"><span class="menu-icon">
+            <li (click)="navigate('dashboard')" class="active"><span class="menu-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </span> Dashboard</li>
-            <li><span class="menu-icon">
+            <li (click)="navigate('incomes')"><span class="menu-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
             </span> Ingresos</li>
             <li><span class="menu-icon">
@@ -82,7 +83,7 @@ import { AuthService } from '../../../core/services/auth.service';
               </div>
               <h3>Total de ingresos</h3>
             </div>
-            <h2>Q0.00</h2>
+            <h2>{{ money(totalIngresos) }}</h2>
             <p class="trend"><span>0%</span> from last week</p>
           </div>
 
@@ -151,12 +152,12 @@ import { AuthService } from '../../../core/services/auth.service';
           <div class="card savings-card">
             <div class="savings-header">
               <h3>Meta de ahorros</h3>
-              <span class="savings-percent">0%</span>
+              <span class="savings-percent">{{ savingsPercent }}%</span>
             </div>
             <div class="progress-bar">
-              <div class="progress-fill" style="width: 0%"></div>
+              <div class="progress-fill" [style.width.%]="savingsPercent"></div>
             </div>
-            <p class="savings-desc">Q0.00 ahorrados de una meta de Q0.00</p>
+            <p class="savings-desc">{{ money(ahorrosTotal) }} ahorrados de una meta de {{ money(ahorrosMeta) }}</p>
           </div>
         </section>
 
@@ -608,6 +609,7 @@ import { AuthService } from '../../../core/services/auth.service';
 })
 export class DashboardComponent {
   authService = inject(AuthService);
+  router = inject(Router);
 
   weekDays = [
     { label: 'Lun', value: 0, color: '#3b3b42' },
@@ -631,7 +633,52 @@ export class DashboardComponent {
     return this.isAdmin ? 'Administrador' : 'Usuario';
   }
 
+  get totalIngresos(): number {
+    try {
+      const raw = localStorage.getItem('lumina_ingresos');
+      if (!raw) {
+        return 0;
+      }
+      const incomes: { monto: number }[] = JSON.parse(raw);
+      return incomes.reduce((sum, i) => sum + Number(i.monto), 0);
+    } catch {
+      return 0;
+    }
+  }
+
+  get ahorrosTotal(): number {
+    try {
+      const raw = localStorage.getItem('lumina_ahorros');
+      if (!raw) {
+        return 0;
+      }
+      const ahorros: { monto: number }[] = JSON.parse(raw);
+      return ahorros.reduce((sum, a) => sum + Number(a.monto), 0);
+    } catch {
+      return 0;
+    }
+  }
+
+  get ahorrosMeta(): number {
+    return 10000;
+  }
+
+  get savingsPercent(): number {
+    if (this.ahorrosMeta <= 0) {
+      return 0;
+    }
+    return Math.min(100, Math.round((this.ahorrosTotal / this.ahorrosMeta) * 100));
+  }
+
+  money(value: number): string {
+    return 'Q' + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
   logout(): void {
     this.authService.logout();
+  }
+
+  navigate(route: string): void {
+    this.router.navigate([route]);
   }
 }
