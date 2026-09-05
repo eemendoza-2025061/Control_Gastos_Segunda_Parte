@@ -65,7 +65,7 @@ export class AuthService {
           next: (res) => this.currentUserSubject.next(res.user),
           error: () => {
             if (this.getToken() === token) {
-              this.logout('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
+              this.logout('Su sesión ha expirado. Por favor, inicie sesión nuevamente.');
             }
           }
         });
@@ -86,7 +86,7 @@ export class AuthService {
       this.logout();
       return;
     }
-    this.logoutTimer = setTimeout(() => this.logout('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.'), delay);
+    this.logoutTimer = setTimeout(() => this.logout('Su sesión ha expirado. Por favor, inicie sesión nuevamente.'), delay);
   }
 
   private getTokenExpiration(token: string): number | null {
